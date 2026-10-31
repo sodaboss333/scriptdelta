@@ -21,7 +21,7 @@ local mainFrame = Instance.new("Frame")
 mainFrame.Size = UDim2.new(0, 580, 0, 400)
 mainFrame.Position = UDim2.new(0.5, -290, 0.5, -200)
 mainFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 22)
-mainFrame.BackgroundTransparency = 0.2 -- Легкая прозрачность, чтобы фон был виден
+mainFrame.BackgroundTransparency = 0.2
 mainFrame.BorderSizePixel = 0
 mainFrame.Active = true
 mainFrame.Draggable = true
@@ -35,20 +35,6 @@ local stroke = Instance.new("UIStroke")
 stroke.Color = Color3.fromRGB(0, 170, 255)
 stroke.Thickness = 2
 stroke.Parent = mainFrame
-
--- Фоновая картинка (Патрик и Губка Боб в подгузниках)
-local bgImage = Instance.new("ImageLabel")
-bgImage.Size = UDim2.new(1, 0, 1, 0)
-bgImage.BackgroundTransparency = 1
--- Используем надежный ID текстуры-загрузки (или аналог картинки из декалей роблокса)
-bgImage.Image = "rbxassetid://16766326162" -- Текстура или можно заменить на прямую деколь
-bgImage.ImageTransparency = 0.55 -- Делаем полупрозрачной, чтобы не мешать тексту
-bgImage.ZIndex = 0
-bgImage.Parent = mainFrame
-
-local bgCorner = Instance.new("UICorner")
-bgCorner.CornerRadius = UDim.new(0, 12)
-bgCorner.Parent = bgImage
 
 -- Кнопка сворачивания
 local minimizeBtn = Instance.new("TextButton")
@@ -357,10 +343,47 @@ createToggle(panelBoost, "FLY", 240, function(s) flyEnabled = s end)
 createSlider(panelBoost, "FLY SPEED", 60, 10, 150, 275, function(v) flySpeedVal = v end)
 createToggle(panelBoost, "INFINITE JUMP", 345, function(s) infJumpEnabled = s end)
 
--- Вкладка AutoWin
+-- Вкладка AutoWin (Моментальный телепорт по кнопке)
 addTitle(panelAutoWin, "TOWER OF HELL AUTOWIN")
-local autoWinEnabled = false
-createToggle(panelAutoWin, "AUTO GO TO WHITE DOOR", 40, function(s) autoWinEnabled = s end)
+local function teleportToFinish()
+    local char = LocalPlayer.Character
+    if char and char:FindFirstChild("HumanoidRootPart") then
+        local rootPart = char.HumanoidRootPart
+        local targetPart = nil
+        local highestY = -math.huge
+        for _, obj in pairs(workspace:GetDescendants()) do
+            if obj:IsA("BasePart") then
+                local name = obj.Name:lower()
+                if name:find("finish") or name:find("door") or name:find("win") or (obj.Color == Color3.fromRGB(255, 255, 255) and obj.Position.Y > 50) then
+                    if obj.Position.Y > highestY then
+                        highestY = obj.Position.Y
+                        targetPart = obj
+                    end
+                end
+            end
+        end
+        if targetPart then
+            rootPart.CFrame = targetPart.CFrame + Vector3.new(0, 3, 0)
+        end
+    end
+end
+
+local autoWinBtn = Instance.new("TextButton")
+autoWinBtn.Size = UDim2.new(0.9, 0, 0, 40)
+autoWinBtn.Position = UDim2.new(0.05, 0, 0, 40)
+autoWinBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+autoWinBtn.Text = "TELEPORT TO WHITE DOOR"
+autoWinBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+autoWinBtn.Font = Enum.Font.Code
+autoWinBtn.TextSize = 12
+autoWinBtn.ZIndex = 3
+autoWinBtn.Parent = panelAutoWin
+
+local winCorner = Instance.new("UICorner")
+winCorner.CornerRadius = UDim.new(0, 6)
+winCorner.Parent = autoWinBtn
+
+autoWinBtn.MouseButton1Click:Connect(teleportToFinish)
 
 -- Вкладка Visuals
 addTitle(panelVisuals, "VISUAL CUSTOMIZATIONS")
@@ -468,26 +491,6 @@ RunService.RenderStepped:Connect(function()
         
         if speedEnabled then hum.WalkSpeed = speedVal end
         if jumpEnabled then hum.JumpPower = jumpVal end
-
-        -- Автоматический поиск белой двери / финиша на высоте
-        if autoWinEnabled then
-            local targetPart = nil
-            local highestY = -math.huge
-            for _, obj in pairs(workspace:GetDescendants()) do
-                if obj:IsA("BasePart") then
-                    local name = obj.Name:lower()
-                    if name:find("finish") or name:find("door") or name:find("win") or (obj.Color == Color3.fromRGB(255, 255, 255) and obj.Position.Y > 50) then
-                        if obj.Position.Y > highestY then
-                            highestY = obj.Position.Y
-                            targetPart = obj
-                        end
-                    end
-                end
-            end
-            if targetPart then
-                rootPart.CFrame = targetPart.CFrame + Vector3.new(0, 3, 0)
-            end
-        end
 
         -- Touch Fling
         if touchFlingEnabled then
