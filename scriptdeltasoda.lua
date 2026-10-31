@@ -21,7 +21,7 @@ local mainFrame = Instance.new("Frame")
 mainFrame.Size = UDim2.new(0, 580, 0, 400)
 mainFrame.Position = UDim2.new(0.5, -290, 0.5, -200)
 mainFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 22)
-mainFrame.BackgroundTransparency = 0.2
+mainFrame.BackgroundTransparency = 0.15
 mainFrame.BorderSizePixel = 0
 mainFrame.Active = true
 mainFrame.Draggable = true
@@ -89,7 +89,7 @@ end)
 local sidebar = Instance.new("Frame")
 sidebar.Size = UDim2.new(0, 170, 1, 0)
 sidebar.BackgroundColor3 = Color3.fromRGB(25, 25, 32)
-sidebar.BackgroundTransparency = 0.3
+sidebar.BackgroundTransparency = 0.2
 sidebar.BorderSizePixel = 0
 sidebar.ZIndex = 2
 sidebar.Parent = mainFrame
@@ -322,6 +322,7 @@ local function createSlider(panel, name, defaultVal, minVal, maxVal, posY, callb
             local percent = math.clamp((input.Position.X - sliderBg.AbsolutePosition.X) / sliderBg.AbsoluteSize.X, 0, 1)
             sliderFill.Size = UDim2.new(percent, 0, 1, 0)
             local val = math.floor(minVal + (maxVal - minVal) * percent)
+            label.Text = name .. ": " + tostring(val) -- поправлено
             label.Text = name .. ": " .. tostring(val)
             callback(val)
         end
@@ -343,7 +344,7 @@ createToggle(panelBoost, "FLY", 240, function(s) flyEnabled = s end)
 createSlider(panelBoost, "FLY SPEED", 60, 10, 150, 275, function(v) flySpeedVal = v end)
 createToggle(panelBoost, "INFINITE JUMP", 345, function(s) infJumpEnabled = s end)
 
--- Вкладка AutoWin (Моментальный телепорт по кнопке)
+-- Вкладка AutoWin (Точный безопасный телепорт прямо перед белой дверью)
 addTitle(panelAutoWin, "TOWER OF HELL AUTOWIN")
 local function teleportToFinish()
     local char = LocalPlayer.Character
@@ -351,10 +352,12 @@ local function teleportToFinish()
         local rootPart = char.HumanoidRootPart
         local targetPart = nil
         local highestY = -math.huge
+        
         for _, obj in pairs(workspace:GetDescendants()) do
             if obj:IsA("BasePart") then
                 local name = obj.Name:lower()
-                if name:find("finish") or name:find("door") or name:find("win") or (obj.Color == Color3.fromRGB(255, 255, 255) and obj.Position.Y > 50) then
+                -- Ищем именно финишную зону или дверь на большой высоте
+                if (name:find("finish") or name:find("win") or name:find("door")) and obj.Position.Y > 40 then
                     if obj.Position.Y > highestY then
                         highestY = obj.Position.Y
                         targetPart = obj
@@ -362,8 +365,13 @@ local function teleportToFinish()
                 end
             end
         end
+        
         if targetPart then
-            rootPart.CFrame = targetPart.CFrame + Vector3.new(0, 3, 0)
+            -- Телепортируем прямо на платформу перед дверью (чуть спереди и выше, чтобы не кинуло за карту)
+            rootPart.CFrame = targetPart.CFrame + Vector3.new(0, 4, -4)
+        else
+            -- Запасной вариант: если дверь не найдена по имени, кидаем на самую верхнюю точку карты
+            rootPart.CFrame = CFrame.new(0, highestY > 0 and highestY + 10 or 300, 0)
         end
     end
 end
