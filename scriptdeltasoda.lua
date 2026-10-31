@@ -1,169 +1,145 @@
 --!strict
---[=[
-    Модуль: Automated Egg Collector UI & Bot Logic
-    Назначение: Автоматизированный сбор яиц с настраиваемым фильтром заработка и кастомным GUI.
-]=]
-
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
-local CoreGui = game:GetService("CoreGui")
-
 local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
--- Настройки бота
-local BotSettings = {
-    MinEggValue = 100, -- Минимальный заработок для сбора
-    ScanRadius = 200,  -- Радиус поиска
-    IsActive = false,
-}
-
--- Создание графического интерфейса (GUI)
-local function createCollectorUI()
-    local screenGui = Instance.new("ScreenGui")
-    screenGui.Name = "EggCollectorUI"
-    screenGui.ResetOnSpawn = false
-    screenGui.Parent = CoreGui
-
-    local mainFrame = Instance.new("Frame")
-    mainFrame.Size = UDim2.new(0, 320, 0, 420)
-    mainFrame.Position = UDim2.new(0.05, 0, 0.2, 0)
-    mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-    mainFrame.BorderSizePixel = 0
-    mainFrame.Parent = screenGui
-
-    local uiCorner = Instance.new("UICorner")
-    uiCorner.CornerRadius = UDim.new(0, 12)
-    uiCorner.Parent = mainFrame
-
-    -- Заголовок
-    local titleLabel = Instance.new("TextLabel")
-    titleLabel.Size = UDim2.new(1, 0, 0, 50)
-    titleLabel.BackgroundTransparency = 1
-    titleLabel.Text = "🤖 Авто-сборщик яиц"
-    titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    titleLabel.TextSize = 18
-    titleLabel.Font = Enum.Font.GothamBold
-    titleLabel.Parent = mainFrame
-
-    -- Кнопка старт/стоп
-    local toggleButton = Instance.new("TextButton")
-    toggleButton.Size = UDim2.new(0.9, 0, 0, 45)
-    toggleButton.Position = UDim2.new(0.05, 0, 0.13, 0)
-    toggleButton.BackgroundColor3 = Color3.fromRGB(0, 170, 127)
-    toggleButton.Text = "Статус: ВЫКЛЮЧЕН"
-    toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    toggleButton.TextSize = 15
-    toggleButton.Font = Enum.Font.GothamBold
-    toggleButton.Parent = mainFrame
-
-    local btnCorner = Instance.new("UICorner")
-    btnCorner.CornerRadius = UDim.new(0, 8)
-    btnCorner.Parent = toggleButton
-
-    -- Скролл-контейнер для списка яиц и юнитов
-    local scrollingFrame = Instance.new("ScrollingFrame")
-    scrollingFrame.Size = UDim2.new(0.9, 0, 0.65, 0)
-    scrollingFrame.Position = UDim2.new(0.05, 0, 0.26, 0)
-    scrollingFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
-    scrollingFrame.BorderSizePixel = 0
-    scrollingFrame.CanvasSize = UDim2.new(0, 0, 2, 0)
-    scrollingFrame.Parent = mainFrame
-
-    local scrollCorner = Instance.new("UICorner")
-    scrollCorner.CornerRadius = UDim.new(0, 8)
-    scrollCorner.Parent = scrollingFrame
-
-    local uiListLayout = Instance.new("UIListLayout")
-    uiListLayout.Padding = UDim.new(0, 5)
-    uiListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    uiListLayout.Parent = scrollingFrame
-
-    -- Логика переключения кнопки
-    toggleButton.MouseButton1Click:Connect(function()
-        BotSettings.IsActive = not BotSettings.IsActive
-        if BotSettings.IsActive then
-            toggleButton.Text = "Статус: ВКЛЮЧЕН"
-            toggleButton.BackgroundColor3 = Color3.fromRGB(220, 50, 50)
-        else
-            toggleButton.Text = "Статус: ВЫКЛЮЧЕН"
-            toggleButton.BackgroundColor3 = Color3.fromRGB(0, 170, 127)
-        end
-    end)
-
-    return scrollingFrame
+-- Удаляем старое меню, если оно уже было открыто
+if PlayerGui:FindFirstChild("SimpleEggGui") then
+    PlayerGui.SimpleEggGui:Destroy()
 end
 
--- Функция добавления элемента в интерфейс (Иконка, Юнит, Заработок)
-local function addEggUIEntry(container: ScrollingFrame, eggName: string, unitName: string, unitValue: number, iconId: string)
-    local entryFrame = Instance.new("Frame")
-    entryFrame.Size = UDim2.new(1, -10, 0, 55)
-    entryFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 48)
-    entryFrame.BorderSizePixel = 0
-    entryFrame.Parent = container
+-- Создаем графический интерфейс
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "SimpleEggGui"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = PlayerGui
 
-    local entryCorner = Instance.new("UICorner")
-    entryCorner.CornerRadius = UDim.new(0, 6)
-    entryCorner.Parent = entryFrame
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 300, 0, 380)
+frame.Position = UDim2.new(0.05, 0, 0.2, 0)
+frame.BackgroundColor3 = Color3.fromRGB(35, 35, 42)
+frame.BorderSizePixel = 0
+frame.Parent = screenGui
 
-    -- Иконка яйца / юнита
-    local iconLabel = Instance.new("ImageLabel")
-    iconLabel.Size = UDim2.new(0, 40, 0, 40)
-    iconLabel.Position = UDim2.new(0.02, 0, 0.1, 0)
-    iconLabel.BackgroundTransparency = 1
-    iconLabel.Image = iconId ~= "" and iconId or "rbxassetid://6031094678" -- Стандартная иконка-заглушка
-    iconLabel.Parent = entryFrame
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 10)
+corner.Parent = frame
 
-    -- Текст с информацией
-    local infoLabel = Instance.new("TextLabel")
-    infoLabel.Size = UDim2.new(0.75, 0, 1, 0)
-    infoLabel.Position = UDim2.new(0.22, 0, 0, 0)
-    infoLabel.BackgroundTransparency = 1
-    infoLabel.Text = string.format("🥚 %s\n⚔️ Юнит: %s | 💵 Доход: +%d", eggName, unitName, unitValue)
-    infoLabel.TextColor3 = Color3.fromRGB(220, 220, 220)
-    infoLabel.TextSize = 12
-    infoLabel.Font = Enum.Font.Gotham
-    infoLabel.TextXAlignment = Enum.TextXAlignment.Left
-    infoLabel.Parent = entryFrame
-end
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 45)
+title.BackgroundTransparency = 1
+title.Text = "🥚 Авто-Яйца (Рабочий)"
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.TextSize = 16
+title.Font = Enum.Font.GothamBold
+title.Parent = frame
 
--- Функция проверки ценности объекта
-local function isEggWorthCollecting(eggModel: Instance): boolean
-    local valueAttribute = eggModel:GetAttribute("EggValue")
-    if valueAttribute and typeof(valueAttribute) == "number" then
-        return valueAttribute >= BotSettings.MinEggValue
+-- Кнопка включения/выключения
+local toggleBtn = Instance.new("TextButton")
+toggleBtn.Size = UDim2.new(0.9, 0, 0, 40)
+toggleBtn.Position = UDim2.new(0.05, 0, 0.13, 0)
+toggleBtn.BackgroundColor3 = Color3.fromRGB(0, 160, 100)
+toggleBtn.Text = "Статус: ВЫКЛЮЧЕН"
+toggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+toggleBtn.TextSize = 14
+toggleBtn.Font = Enum.Font.GothamBold
+toggleBtn.Parent = frame
+
+local btnCorner = Instance.new("UICorner")
+btnCorner.CornerRadius = UDim.new(0, 6)
+btnCorner.Parent = toggleBtn
+
+-- Список для вывода яиц
+local scrolling = Instance.new("ScrollingFrame")
+scrolling.Size = UDim2.new(0.9, 0, 0.68, 0)
+scrolling.Position = UDim2.new(0.05, 0, 0.27, 0)
+scrolling.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+scrolling.BorderSizePixel = 0
+scrolling.CanvasSize = UDim2.new(0, 0, 2, 0)
+scrolling.Parent = frame
+
+local scrollCorner = Instance.new("UICorner")
+scrollCorner.CornerRadius = UDim.new(0, 6)
+scrollCorner.Parent = scrolling
+
+local listLayout = Instance.new("UIListLayout")
+listLayout.Padding = UDim.new(0, 4)
+listLayout.Parent = scrolling
+
+-- Переменная состояния бота
+local isActive = false
+
+toggleBtn.MouseButton1Click:Connect(function()
+    isActive = not isActive
+    if isActive then
+        toggleBtn.Text = "Статус: ВКЛЮЧЕН"
+        toggleBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+    else
+        toggleBtn.Text = "Статус: ВЫКЛЮЧЕН"
+        toggleBtn.BackgroundColor3 = Color3.fromRGB(0, 160, 100)
     end
-    return false
+end)
+
+-- Функция добавления строки в интерфейс
+local function addEntry(name: string, unit: string, val: number)
+    local item = Instance.new("TextLabel")
+    item.Size = UDim2.new(1, -10, 0, 40)
+    item.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
+    item.TextColor3 = Color3.fromRGB(240, 240, 240)
+    item.TextSize = 11
+    item.Font = Enum.Font.Gotham
+    item.TextXAlignment = Enum.TextXAlignment.Left
+    item.Text = string.format(" 🥚 %s\n ⚔️ %s | 💵 Доход: +%d", name, unit, val)
+    item.Parent = scrolling
+    
+    local c = Instance.new("UICorner")
+    c.CornerRadius = UDim.new(0, 4)
+    c.Parent = item
 end
 
--- Основная логика поиска и сканирования мира
-local function startCollectorBot()
-    local uiContainer = createCollectorUI()
-
-    task.spawn(function()
-        while true do
-            if BotSettings.IsActive then
-                local character = LocalPlayer.Character
-                local rootPart = character and character.PrimaryPart
-                local humanoid = character and character:FindFirstChildOfClass("Humanoid")
-
-                if rootPart and humanoid then
-                    local eggsFolder = Workspace:FindFirstChild("Eggs")
-                    
-                    if eggsFolder then
-                        -- Очищаем старый интерфейс списка перед обновлением (опционально)
-                        for _, child in ipairs(uiContainer:GetChildren()) do
-                            if child:IsA("Frame") then child:Destroy() end
+-- Основной цикл работы
+task.spawn(function()
+    while true do
+        if isActive then
+            local char = LocalPlayer.Character
+            local root = char and char.PrimaryPart
+            local hum = char and char:FindFirstChildOfClass("Humanoid")
+            
+            -- Очищаем старый список на экране
+            for _, child in ipairs(scrolling:GetChildren()) do
+                if child:IsA("TextLabel") then
+                    child:Destroy()
+                end
+            end
+            
+            local eggsFolder = Workspace:FindFirstChild("Eggs")
+            if eggsFolder and root and hum then
+                for _, egg in ipairs(eggsFolder:GetChildren()) do
+                    if egg:IsA("Model") then
+                        local eggVal = egg:GetAttribute("EggValue") :: number or 0
+                        local unitName = egg:GetAttribute("UnitName") :: string or "Неизвестно"
+                        
+                        -- Выводим информацию в GUI
+                        addEntry(egg.Name, unitName, eggVal)
+                        
+                        -- Если яйцо ценное (больше или равно 100), подходим к нему
+                        if eggVal >= 100 then
+                            local part = egg.PrimaryPart or egg:FindFirstChildWhichIsA("BasePart")
+                            if part then
+                                hum:MoveTo(part.Position)
+                                task.spawn(function()
+                                    pcall(function()
+                                        hum.MoveToFinished:Wait()
+                                    end)
+                                end)
+                                break
+                            end
                         end
-
-                        for _, egg in ipairs(eggsFolder:GetChildren()) do
-                            if egg:IsA("Model") then
-                                local eggValue = egg:GetAttribute("EggValue") :: number or 0
-                                local unitName = egg:GetAttribute("UnitName") or "Неизвестно"
-                                local iconId = egg:GetAttribute("IconAssetId") or ""
-
-                                -- Выводим информацию в UI
-                                addEggUIEntry(uiContainer, egg.Name, unitName, eggValue, iconId)
-
-                                -- Проверяем условие сбора по минимальному заработку
-                                if
-                    
+                    end
+                end
+            end
+        end
+        task.wait(2)
+    end
+end)
