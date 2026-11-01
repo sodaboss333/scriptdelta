@@ -1,4 +1,4 @@
--- Строго вертикальный Inf Jump по глобальной оси Y для Delta
+-- PS99 Stairway to Heaven - Strict Vertical Inf Jump для Delta
 local CoreGui = game:GetService("CoreGui")
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
@@ -7,7 +7,7 @@ local localPlayer = Players.LocalPlayer
 
 -- Создание UI интерфейса
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "AbsoluteVerticalJumpUI"
+ScreenGui.Name = "PS99StairClimberUI"
 ScreenGui.ResetOnSpawn = false
 
 if syn and syn.protect_gui then
@@ -36,7 +36,7 @@ UICorner.Parent = MainFrame
 local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(1, 0, 0, 30)
 Title.BackgroundTransparency = 1
-Title.Text = "Strict Up Jump (Delta)"
+Title.Text = "Stair Climber (Delta)"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.TextSize = 14
 Title.Font = Enum.Font.GothamBold
@@ -57,12 +57,12 @@ local ButtonCorner = Instance.new("UICorner")
 ButtonCorner.CornerRadius = UDim.new(0, 6)
 ButtonCorner.Parent = ToggleButton
 
--- Настройка высоты/скорости
+-- Настройка высоты прыжка
 local SpeedLabel = Instance.new("TextLabel")
 SpeedLabel.Size = UDim2.new(1, 0, 0, 25)
 SpeedLabel.Position = UDim2.new(0, 0, 0.52, 0)
 SpeedLabel.BackgroundTransparency = 1
-SpeedLabel.Text = "Jump Power: 5"
+SpeedLabel.Text = "Jump Power: 10"
 SpeedLabel.TextColor3 = Color3.fromRGB(220, 220, 220)
 SpeedLabel.TextSize = 13
 SpeedLabel.Font = Enum.Font.Gotham
@@ -86,6 +86,7 @@ PlusBtn.Text = "+"
 PlusBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 PlusBtn.TextSize = 18
 PlusBtn.Font = Enum.Font.GothamBold
+PlusBtn.Parent = MainGrade -- поправка на Parent ниже
 PlusBtn.Parent = MainFrame
 
 local BtnCorner1 = Instance.new("UICorner")
@@ -98,7 +99,7 @@ BtnCorner2.Parent = PlusBtn
 
 -- Логика
 local scriptEnabled = false
-local jumpPower = 5
+local jumpPower = 10
 local isJumping = false
 
 ToggleButton.MouseButton1Click:Connect(function()
@@ -131,18 +132,19 @@ UserInputService.JumpRequest:Connect(function()
     end
 end)
 
--- Телепортация по глобальной позиции (строго вверх по оси Y мира) с сохранением поворота
+-- Подъем строго вверх по глобальной оси Y мира, игнорируя поворот камеры
 RunService.RenderStepped:Connect(function()
     if scriptEnabled and isJumping then
         local character = localPlayer.Character
         if character and character:FindFirstChild("HumanoidRootPart") then
             local hrp = character.HumanoidRootPart
             
-            -- Меняем только Position (добавляем высоту к Y), а Rotation оставляем прежним
+            -- Меняем положение строго по Y, сохраняя текущий поворот персонажа
             hrp.CFrame = CFrame.new(hrp.Position + Vector3.new(0, jumpPower, 0)) * (hrp.CFrame - hrp.Position)
             
-            if character:FindFirstChildOfClass("Humanoid") then
-                character:FindFirstChildOfClass("Humanoid"):ChangeState(Enum.HumanoidStateType.Jumping)
+            local humanoid = character:FindFirstChildOfClass("Humanoid")
+            if humanoid then
+                humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
             end
         end
         isJumping = false
