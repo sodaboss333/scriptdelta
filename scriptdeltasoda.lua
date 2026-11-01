@@ -1,4 +1,4 @@
--- Inf Jump по нажатию кнопки прыжка с регулировкой скорости для Delta
+-- Строго вертикальный Inf Jump по нажатию кнопки с регулировкой скорости для Delta
 local CoreGui = game:GetService("CoreGui")
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
@@ -7,7 +7,7 @@ local localPlayer = Players.LocalPlayer
 
 -- Создание UI интерфейса
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "StairJumpUI"
+ScreenGui.Name = "VerticalJumpUI"
 ScreenGui.ResetOnSpawn = false
 
 if syn and syn.protect_gui then
@@ -36,7 +36,7 @@ UICorner.Parent = MainFrame
 local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(1, 0, 0, 30)
 Title.BackgroundTransparency = 1
-Title.Text = "Jump Boost (Delta)"
+Title.Text = "Vertical Jump (Delta)"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.TextSize = 14
 Title.Font = Enum.Font.GothamBold
@@ -113,7 +113,7 @@ ToggleButton.MouseButton1Click:Connect(function()
 end)
 
 MinusBtn.MouseButton1Click:Connect(function()
-    if jumpPower > 1 then
+    if jumpPower > 2 then
         jumpPower = jumpPower - 2
         SpeedLabel.Text = "Jump Power: " .. tostring(jumpPower)
     end
@@ -124,20 +124,21 @@ PlusBtn.MouseButton1Click:Connect(function()
     SpeedLabel.Text = "Jump Power: " .. tostring(jumpPower)
 end)
 
--- Отслеживание зажатия кнопки прыжка (клавиатура / экран)
+-- Отслеживание нажатия прыжка
 UserInputService.JumpRequest:Connect(function()
     if scriptEnabled then
         isJumping = true
     end
 end)
 
--- Применение импульса только в момент прыжка
+-- Применение импульса строго по вертикали (ось Y)
 RunService.RenderStepped:Connect(function()
     if scriptEnabled and isJumping then
         local character = localPlayer.Character
         if character and character:FindFirstChild("HumanoidRootPart") then
             local hrp = character.HumanoidRootPart
-            hrp.CFrame = hrp.CFrame + Vector3.new(0, jumpPower, 0) + (hrp.CFrame.LookVector * (jumpPower * 0.2))
+            -- Добавляем координаты только по вертикальной оси Y (никакого LookVector)
+            hrp.CFrame = hrp.CFrame + Vector3.new(0, jumpPower, 0)
             
             if character:FindFirstChildOfClass("Humanoid") then
                 character:FindFirstChildOfClass("Humanoid"):ChangeState(Enum.HumanoidStateType.Jumping)
