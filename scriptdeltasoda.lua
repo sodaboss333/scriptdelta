@@ -1,12 +1,13 @@
--- Скрипт для супер-быстрого авто-подъема с настройкой скорости для Delta
+-- Inf Jump по нажатию кнопки прыжка с регулировкой скорости для Delta
 local CoreGui = game:GetService("CoreGui")
 local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local localPlayer = Players.LocalPlayer
 
 -- Создание UI интерфейса
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "StairTeleportUI_V2"
+ScreenGui.Name = "StairJumpUI"
 ScreenGui.ResetOnSpawn = false
 
 if syn and syn.protect_gui then
@@ -35,7 +36,7 @@ UICorner.Parent = MainFrame
 local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(1, 0, 0, 30)
 Title.BackgroundTransparency = 1
-Title.Text = "Super Inf Jump (Delta)"
+Title.Text = "Jump Boost (Delta)"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.TextSize = 14
 Title.Font = Enum.Font.GothamBold
@@ -46,7 +47,7 @@ local ToggleButton = Instance.new("TextButton")
 ToggleButton.Size = UDim2.new(0.85, 0, 0, 40)
 ToggleButton.Position = UDim2.new(0.075, 0, 0.22, 0)
 ToggleButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-ToggleButton.Text = "AUTO-CLIMB: OFF"
+ToggleButton.Text = "BOOST: OFF"
 ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 ToggleButton.TextSize = 13
 ToggleButton.Font = Enum.Font.GothamBold
@@ -56,12 +57,12 @@ local ButtonCorner = Instance.new("UICorner")
 ButtonCorner.CornerRadius = UDim.new(0, 6)
 ButtonCorner.Parent = ToggleButton
 
--- Панель настройки скорости
+-- Настройка высоты/скорости
 local SpeedLabel = Instance.new("TextLabel")
 SpeedLabel.Size = UDim2.new(1, 0, 0, 25)
 SpeedLabel.Position = UDim2.new(0, 0, 0.52, 0)
 SpeedLabel.BackgroundTransparency = 1
-SpeedLabel.Text = "Speed: 3"
+SpeedLabel.Text = "Jump Power: 5"
 SpeedLabel.TextColor3 = Color3.fromRGB(220, 220, 220)
 SpeedLabel.TextSize = 13
 SpeedLabel.Font = Enum.Font.Gotham
@@ -95,47 +96,53 @@ local BtnCorner2 = Instance.new("UICorner")
 BtnCorner2.CornerRadius = UDim.new(0, 4)
 BtnCorner2.Parent = PlusBtn
 
--- Логика переключения и регулировки скорости
-local autoClimbActive = false
-local climbSpeed = 3 -- Начальная скорость (3 ступени/тик)
+-- Логика
+local scriptEnabled = false
+local jumpPower = 5
+local isJumping = false
 
 ToggleButton.MouseButton1Click:Connect(function()
-    autoClimbActive = not autoClimbActive
-    if autoClimbActive then
-        ToggleButton.Text = "AUTO-CLIMB: ON"
+    scriptEnabled = not scriptEnabled
+    if scriptEnabled then
+        ToggleButton.Text = "BOOST: ON"
         ToggleButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
     else
-        ToggleButton.Text = "AUTO-CLIMB: OFF"
+        ToggleButton.Text = "BOOST: OFF"
         ToggleButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
     end
 end)
 
 MinusBtn.MouseButton1Click:Connect(function()
-    if climbSpeed > 1 then
-        climbSpeed = climbSpeed - 1
-        SpeedLabel.Text = "Speed: " .. tostring(climbSpeed)
+    if jumpPower > 1 then
+        jumpPower = jumpPower - 2
+        SpeedLabel.Text = "Jump Power: " .. tostring(jumpPower)
     end
 end)
 
 PlusBtn.MouseButton1Click:Connect(function()
-    -- Можно увеличивать до любых значений (10, 20, 50+)
-    climbSpeed = climbSpeed + 2
-    SpeedLabel.Text = "Speed: " .. tostring(climbSpeed)
+    jumpPower = jumpPower + 3
+    SpeedLabel.Text = "Jump Power: " .. tostring(jumpPower)
 end)
 
--- Супер-быстрый цикл движения
+-- Отслеживание зажатия кнопки прыжка (клавиатура / экран)
+UserInputService.JumpRequest:Connect(function()
+    if scriptEnabled then
+        isJumping = true
+    end
+end)
+
+-- Применение импульса только в момент прыжка
 RunService.RenderStepped:Connect(function()
-    if autoClimbActive then
+    if scriptEnabled and isJumping then
         local character = localPlayer.Character
         if character and character:FindFirstChild("HumanoidRootPart") then
             local hrp = character.HumanoidRootPart
-            -- Подъем вверх на выбранную величину скорости climbSpeed
-            hrp.CFrame = hrp.CFrame + Vector3.new(0, climbSpeed, 0) + (hrp.CFrame.LookVector * (climbSpeed * 0.3))
+            hrp.CFrame = hrp.CFrame + Vector3.new(0, jumpPower, 0) + (hrp.CFrame.LookVector * (jumpPower * 0.2))
             
-            -- Сброс состояния падения для защиты от флага античита
             if character:FindFirstChildOfClass("Humanoid") then
-                character:FindFirstChildOfClass("Humanoid"):ChangeState(Enum.HumanoidStateType.Running)
+                character:FindFirstChildOfClass("Humanoid"):ChangeState(Enum.HumanoidStateType.Jumping)
             end
         end
+        isJumping = false
     end
 end)
