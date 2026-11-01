@@ -1,4 +1,4 @@
--- Строго вертикальный Inf Jump по нажатию кнопки с регулировкой скорости для Delta
+-- Строго вертикальный Inf Jump по глобальной оси Y для Delta
 local CoreGui = game:GetService("CoreGui")
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
@@ -7,7 +7,7 @@ local localPlayer = Players.LocalPlayer
 
 -- Создание UI интерфейса
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "VerticalJumpUI"
+ScreenGui.Name = "AbsoluteVerticalJumpUI"
 ScreenGui.ResetOnSpawn = false
 
 if syn and syn.protect_gui then
@@ -36,7 +36,7 @@ UICorner.Parent = MainFrame
 local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(1, 0, 0, 30)
 Title.BackgroundTransparency = 1
-Title.Text = "Vertical Jump (Delta)"
+Title.Text = "Strict Up Jump (Delta)"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.TextSize = 14
 Title.Font = Enum.Font.GothamBold
@@ -131,14 +131,15 @@ UserInputService.JumpRequest:Connect(function()
     end
 end)
 
--- Применение импульса строго по вертикали (ось Y)
+-- Телепортация по глобальной позиции (строго вверх по оси Y мира) с сохранением поворота
 RunService.RenderStepped:Connect(function()
     if scriptEnabled and isJumping then
         local character = localPlayer.Character
         if character and character:FindFirstChild("HumanoidRootPart") then
             local hrp = character.HumanoidRootPart
-            -- Добавляем координаты только по вертикальной оси Y (никакого LookVector)
-            hrp.CFrame = hrp.CFrame + Vector3.new(0, jumpPower, 0)
+            
+            -- Меняем только Position (добавляем высоту к Y), а Rotation оставляем прежним
+            hrp.CFrame = CFrame.new(hrp.Position + Vector3.new(0, jumpPower, 0)) * (hrp.CFrame - hrp.Position)
             
             if character:FindFirstChildOfClass("Humanoid") then
                 character:FindFirstChildOfClass("Humanoid"):ChangeState(Enum.HumanoidStateType.Jumping)
