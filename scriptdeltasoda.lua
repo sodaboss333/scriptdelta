@@ -1,19 +1,18 @@
--- Fart Obby Ultimate Hub (Infinite Farts)
+-- Universal Speed, Jump & InfJump Hub (All Places)
 local CoreGui = game:GetService("CoreGui")
 local Players = game:GetService("Players")
-local Workspace = game:GetService("Workspace")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local UserInputService = game:GetService("UserInputService")
 local localPlayer = Players.LocalPlayer
 
--- Очистка старого интерфейса
+-- Очистка старого меню
 for _, gui in pairs(CoreGui:GetChildren()) do
-    if gui.Name == "FartObbyProHub" then
+    if gui.Name == "UniversalInfJumpHub" then
         gui:Destroy()
     end
 end
 
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "FartObbyProHub"
+ScreenGui.Name = "UniversalInfJumpHub"
 ScreenGui.ResetOnSpawn = false
 
 if gethui then
@@ -25,7 +24,7 @@ else
     ScreenGui.Parent = CoreGui
 end
 
--- Главное окно
+-- Главное окно хаба
 local MainFrame = Instance.new("Frame")
 MainFrame.Size = UDim2.new(0, 480, 0, 320)
 MainFrame.Position = UDim2.new(0.5, -240, 0.25, 0)
@@ -39,7 +38,7 @@ local UICorner = Instance.new("UICorner")
 UICorner.CornerRadius = UDim.new(0, 8)
 UICorner.Parent = MainFrame
 
--- Верхняя панель
+-- Шапка
 local TopBar = Instance.new("Frame")
 TopBar.Size = UDim2.new(1, 0, 0, 35)
 TopBar.BackgroundColor3 = Color3.fromRGB(18, 18, 21)
@@ -54,7 +53,7 @@ local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(0.7, 0, 1, 0)
 Title.Position = UDim2.new(0.03, 0, 0, 0)
 Title.BackgroundTransparency = 1
-Title.Text = "💨 Infinite Fart Hub  |  v2.0"
+Title.Text = "⚡ Universal Speed & InfJump Hub"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.TextSize = 13
 Title.Font = Enum.Font.GothamBold
@@ -75,7 +74,7 @@ CloseBtn.MouseButton1Click:Connect(function()
     ScreenGui:Destroy()
 end)
 
--- Левая боковая панель
+-- Боковое меню (Вкладки)
 local Sidebar = Instance.new("Frame")
 Sidebar.Size = UDim2.new(0, 130, 1, -35)
 Sidebar.Position = UDim2.new(0, 0, 0, 35)
@@ -88,7 +87,6 @@ SideLayout.SortOrder = Enum.SortOrder.LayoutOrder
 SideLayout.Padding = UDim.new(0, 4)
 SideLayout.Parent = Sidebar
 
--- Контейнер страниц
 local Container = Instance.new("Frame")
 Container.Size = UDim2.new(1, -135, 1, -45)
 Container.Position = UDim2.new(0, 135, 0, 40)
@@ -114,8 +112,8 @@ local function createPage(name)
     return page
 end
 
-local pageAutomation = createPage("Automation")
-local pageHacks = createPage("Hacks")
+local pageMain = createPage("Main")
+local pageSettings = createPage("Settings")
 
 local function createTabButton(name, targetPage)
     local btn = Instance.new("TextButton")
@@ -135,10 +133,10 @@ local function createTabButton(name, targetPage)
     end)
 end
 
-createTabButton("⚡ Фарм / Пуки", pageAutomation)
-createTabButton("🔥 Движение", pageHacks)
+createTabButton("⚡ Движение", pageMain)
+createTabButton("🛡️ Безопасность", pageSettings)
 
-pageAutomation.Visible = true
+pageMain.Visible = true
 
 local function createToggle(page, text, callback)
     local item = Instance.new("Frame")
@@ -196,70 +194,53 @@ local function createToggle(page, text, callback)
     end)
 end
 
--- 1. БЕСКОНЕЧНЫЕ ПУКИ (Спам пакетов без КД)
-createToggle(pageAutomation, "🔥 Бесконечные Пуки (No Cooldown)", function(state)
-    getgenv().infFart = state
-    if state then
-        -- Быстрый параллельный цикл для обхода задержки
-        task.spawn(function()
-            while getgenv().infFart do
-                pcall(function()
-                    -- Поиск всех инстансов ремоутов пука в игре
-                    for _, v in pairs(ReplicatedStorage:GetDescendants()) do
-                        if v:IsA("RemoteEvent") and (v.Name:lower():find("fart") or v.Name:lower():find("blow") or v.Name:lower():find("boost")) then
-                            v:FireServer(true)
-                            v:FireServer(100)
-                        end
-                    end
-                    
-                    -- Сброс значения шкалы напрямую в персонаже (если привязано)
-                    if localPlayer.Character and localPlayer.Character:FindFirstChild("FartPower") then
-                        localPlayer.Character.FartPower.Value = 999999
-                    end
-                end)
-                task.wait(0.01) -- Минимальный интервал для максимальной скорости
-            end
-        end)
-    end
-end)
-
-createToggle(pageAutomation, "🧲 Авто-сбор монет и наград", function(state)
-    getgenv().autoCollect = state
+-- 1. СУПЕР-СКОРОСТЬ
+createToggle(pageMain, "🚀 Супер-скорость (WalkSpeed 100)", function(state)
+    getgenv().universalSpeed = state
     task.spawn(function()
-        while getgenv().autoCollect do
-            pcall(function()
-                local char = localPlayer.Character
-                if char and char:FindFirstChild("HumanoidRootPart") then
-                    local hrp = char.HumanoidRootPart
-                    for _, obj in pairs(Workspace:GetDescendants()) do
-                        if obj:IsA("BasePart") and (obj.Name:lower():find("coin") or obj.Name:lower():find("gem") or obj.Name:lower():find("star")) then
-                            obj.CFrame = hrp.CFrame
-                        end
-                    end
-                end
-            end)
-            task.wait(0.3)
-        end
-    end)
-end)
-
--- 2. ДВИЖЕНИЕ
-createToggle(pageHacks, "🚀 Сверхбыстрый Бег (SpeedHack)", function(state)
-    getgenv().speedHack = state
-    task.spawn(function()
-        while getgenv().speedHack do
+        while getgenv().universalSpeed do
             pcall(function()
                 local char = localPlayer.Character
                 if char and char:FindFirstChildOfClass("Humanoid") then
-                    char.Humanoid.WalkSpeed = 70
+                    char.Humanoid.WalkSpeed = 100
                 end
             end)
             task.wait(0.1)
         end
+        pcall(function()
+            local char = localPlayer.Character
+            if char and char:FindFirstChildOfClass("Humanoid") then
+                char.Humanoid.WalkSpeed = 16
+            end
+        end)
     end)
 end)
 
-createToggle(pageHacks, "🛡️ Защита от AFK", function(state)
+-- 2. ИНФИНИТИ ДЖАМП (Бесконечный прыжок в воздухе)
+local infJumpConn
+createToggle(pageMain, "🦘 Бесконечный прыжок (Infinite Jump)", function(state)
+    if state then
+        infJumpConn = UserInputService.JumpRequest:Connect(function()
+            pcall(function()
+                local char = localPlayer.Character
+                if char then
+                    local hum = char:FindFirstChildOfClass("Humanoid")
+                    if hum then
+                        hum:ChangeState(Enum.HumanoidStateType.Jumping)
+                    end
+                end
+            end)
+        end)
+    else
+        if infJumpConn then
+            infJumpConn:Disconnect()
+            infJumpConn = nil
+        end
+    end
+end)
+
+-- 3. ЗАЩИТА ОТ AFK
+createToggle(pageSettings, "🛡️ Защита от AFK (Анти-кик)", function(state)
     local VirtualUser = game:GetService("VirtualUser")
     localPlayer.Idled:Connect(function()
         if state then
